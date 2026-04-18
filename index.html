@@ -223,6 +223,43 @@
   .entry-category { font-size: 14px; font-weight: 600; color: var(--text-primary); transition: color 0.25s; }
   .entry-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; transition: color 0.25s; }
   .entry-duration { font-size: 13px; font-weight: 700; color: #4f6ef7; }
+  .entry-more {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 18px; padding: 4px 6px;
+    border-radius: 8px; line-height: 1; flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+  .entry-more:active { background: var(--border); }
+
+  /* 액션 시트 */
+  .action-sheet-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 300;
+    left: 50%; transform: translateX(-50%); width: 390px;
+    align-items: flex-end;
+  }
+  .action-sheet-overlay.open { display: flex; }
+  .action-sheet {
+    background: var(--modal-bg); border-radius: 20px 20px 0 0;
+    padding: 16px 16px 40px; width: 100%;
+    transition: background 0.25s;
+  }
+  .action-sheet-title {
+    font-size: 12px; color: var(--text-muted); text-align: center;
+    margin-bottom: 12px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    transition: color 0.25s, border-color 0.25s;
+  }
+  .action-btn {
+    width: 100%; padding: 15px; border: none; background: none;
+    font-size: 16px; cursor: pointer; font-family: inherit;
+    border-radius: 12px; transition: background 0.15s;
+    text-align: center;
+  }
+  .action-btn:active { background: var(--border); }
+  .action-btn.edit { color: #4f6ef7; font-weight: 600; }
+  .action-btn.delete { color: #ff4444; font-weight: 600; }
+  .action-btn.cancel { color: var(--text-muted); margin-top: 4px; }
 
   /* 빈 상태 */
   .empty-state {
@@ -433,7 +470,6 @@
     <div class="content">
       <div class="section-title">
         <span>기록</span>
-        <span style="color:#4f6ef7;font-size:12px;cursor:pointer;text-transform:none;letter-spacing:0;">전체보기</span>
       </div>
       <div class="entry-list" id="entry-list"></div>
       <div class="empty-state" id="empty-state" style="display:none;">
@@ -524,6 +560,7 @@
             <button class="chip" onclick="selectChip(this)">OTT</button>
             <button class="chip" onclick="selectChip(this)">SNS</button>
             <button class="chip" onclick="selectChip(this)">쇼핑</button>
+            <button class="chip" onclick="selectChip(this)">개발</button>
           </div>
           <input class="chip-input" placeholder="직접 입력 (예: 카페에서 멍때리기)">
         </div>
@@ -569,6 +606,7 @@
             <button class="chip" onclick="selectChip(this)">OTT</button>
             <button class="chip" onclick="selectChip(this)">SNS</button>
             <button class="chip" onclick="selectChip(this)">쇼핑</button>
+            <button class="chip" onclick="selectChip(this)">개발</button>
           </div>
           <input class="chip-input" placeholder="직접 입력">
         </div>
@@ -580,6 +618,16 @@
         <button class="start-now-btn" onclick="startNow()">지금 시작</button>
         <div class="start-desc">시작 시간이 자동으로 기록되고,<br>나중에 종료 버튼으로 마칠 수 있어요.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 액션 시트 ══════════════ -->
+  <div class="action-sheet-overlay" id="action-sheet" onclick="closeActionSheet(event)">
+    <div class="action-sheet">
+      <div class="action-sheet-title" id="action-sheet-title"></div>
+      <button class="action-btn edit" onclick="editEntry()">수정</button>
+      <button class="action-btn delete" onclick="deleteEntry()">삭제</button>
+      <button class="action-btn cancel" onclick="closeActionSheet()">취소</button>
     </div>
   </div>
 
@@ -632,6 +680,8 @@
   let selectedCat = { manual: '수면', startnow: '수면' };
   let currentTab = 'manual';
   let viewMonth = { year: currentDate.getFullYear(), month: currentDate.getMonth() };
+  let actionTargetIndex = -1;
+  let editingIndex = -1;
 
   // ── 날짜 유틸
   function dateKey(d) {
@@ -732,13 +782,17 @@
 
       const card = document.createElement('div');
       card.className = 'entry-card';
+      const idx = entries.indexOf(e);
       card.innerHTML = `
         <div class="entry-dot" style="background:${CAT_COLORS[e.cat]||'#bbb'}"></div>
         <div class="entry-info">
           <div class="entry-category">${CAT_ICONS[e.cat]||''} ${e.cat}</div>
           <div class="entry-sub">${subLabel}${e.memo ? ' · ' + e.memo : ''}</div>
         </div>
-        <div><div class="entry-duration">${minsToDuration(mins)}</div></div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="entry-duration">${minsToDuration(mins)}</div>
+          <button class="entry-more" onclick="openActionSheet(${idx}, '${e.cat}', '${e.start}', '${e.end}')">···</button>
+        </div>
       `;
       list.appendChild(card);
     });
@@ -753,6 +807,52 @@
     ).join('');
   }
 
+  // ── 액션 시트
+  function openActionSheet(idx, cat, start, end) {
+    actionTargetIndex = idx;
+    document.getElementById('action-sheet-title').textContent =
+      `${CAT_ICONS[cat]||''} ${cat}  ${start} → ${end}`;
+    document.getElementById('action-sheet').classList.add('open');
+  }
+  function closeActionSheet(e) {
+    if (!e || e.target === document.getElementById('action-sheet'))
+      document.getElementById('action-sheet').classList.remove('open');
+  }
+  function deleteEntry() {
+    const key = dateKey(currentDate);
+    const entries = getEntries(key);
+    entries.splice(actionTargetIndex, 1);
+    saveEntries(key, entries);
+    document.getElementById('action-sheet').classList.remove('open');
+    renderEntries();
+  }
+  function editEntry() {
+    const key = dateKey(currentDate);
+    const entries = getEntries(key);
+    const e = entries[actionTargetIndex];
+    editingIndex = actionTargetIndex;
+    document.getElementById('action-sheet').classList.remove('open');
+
+    // 모달 열고 데이터 채우기
+    openModal();
+    switchTab('manual');
+
+    // 카테고리 선택
+    const catBtns = document.querySelectorAll('#panel-manual .cat-btn');
+    catBtns.forEach(btn => {
+      btn.classList.remove('selected');
+      if (btn.querySelector('.label').textContent === e.cat) {
+        btn.classList.add('selected');
+        selectCat(btn, e.cat, 'manual');
+      }
+    });
+
+    document.getElementById('manual-start').value = e.start;
+    document.getElementById('manual-end').value = e.end;
+    document.querySelector('#panel-manual .memo-input').value = e.memo || '';
+    document.querySelector('#panel-manual .save-btn').textContent = '수정 완료';
+  }
+
   // ── 직접 입력 저장
   function saveManual() {
     const start = document.getElementById('manual-start').value;
@@ -764,7 +864,15 @@
     const memo = document.querySelector('#panel-manual .memo-input').value.trim();
     const key = dateKey(currentDate);
     const entries = getEntries(key);
-    entries.push({ cat, subcat, start, end, memo });
+
+    if (editingIndex >= 0) {
+      entries[editingIndex] = { cat, subcat, start, end, memo };
+      editingIndex = -1;
+      document.querySelector('#panel-manual .save-btn').textContent = '저장';
+    } else {
+      entries.push({ cat, subcat, start, end, memo });
+    }
+
     saveEntries(key, entries);
     closeModal();
     renderEntries();
@@ -849,7 +957,13 @@
     document.getElementById('manual-end').value = hhmm;
     document.getElementById('modal').classList.add('open');
   }
-  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    if (editingIndex >= 0) {
+      editingIndex = -1;
+      document.querySelector('#panel-manual .save-btn').textContent = '저장';
+    }
+  }
   function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
   function closeStopOutside(e) { if (e.target === document.getElementById('stop-modal')) document.getElementById('stop-modal').classList.remove('open'); }
 
