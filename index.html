@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>시간부</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="시간부">
+<meta name="theme-color" content="#1a1a2e">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --surface2: #f8f9ff;
+    --border: #f0f0f0;
+    --border2: #e8e8e8;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555;
+    --text-muted: #999;
+    --text-faint: #ccc;
+    --nav-bg: #ffffff;
+    --nav-border: #eee;
+    --card-shadow: rgba(0,0,0,0.04);
+    --modal-bg: #ffffff;
+    --chip-bg: #ffffff;
+    --bar-track: #f5f5f5;
+    --motto-bg: #1a1a2e;
+    --motto-line1: #ffffff;
+    --motto-line2: #a89cc8;
+    --motto-accent: #7b5ea7;
+    --inprogress-bg: #fff8f0;
+    --inprogress-border: #ffe0c0;
+    --c-수면: #6c8cff;
+    --c-업무: #ff7043;
+    --c-이동: #66bb6a;
+    --c-식사: #ffa726;
+    --c-운동: #ab47bc;
+    --c-여가: #26c6da;
+    --c-기타: #bdbdbd;
+  }
+
+  body.dark {
+    --bg: #0f0f13;
+    --surface: #1c1c24;
+    --surface2: #22222e;
+    --border: #2a2a38;
+    --border2: #2e2e3e;
+    --text-primary: #f0f0f5;
+    --text-secondary: #aaa;
+    --text-muted: #666;
+    --text-faint: #3a3a4a;
+    --nav-bg: #1c1c24;
+    --nav-border: #2a2a38;
+    --card-shadow: rgba(0,0,0,0.3);
+    --modal-bg: #1c1c24;
+    --chip-bg: #22222e;
+    --bar-track: #2a2a38;
+    --motto-bg: #0d0d1a;
+    --motto-line1: #f0f0ff;
+    --motto-line2: #8b7faa;
+    --inprogress-bg: #1e1810;
+    --inprogress-border: #3a2a10;
+  }
+
+  body {
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: var(--bg); display: flex; justify-content: center;
+    align-items: flex-start; min-height: 100vh; transition: background 0.25s;
+  }
+
+  .phone-frame {
+    width: 390px; min-height: 100vh; background: var(--surface);
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,0,0,0.2); transition: background 0.25s;
+    display: flex; flex-direction: column;
+  }
+
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ══ 타이틀 배너 ══ */
+  .title-banner {
+    background: var(--motto-bg);
+    padding: 22px 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.25s;
+  }
+  .title-banner::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(123,94,167,0.18);
+  }
+  .title-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: 40px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(79,110,247,0.12);
+  }
+  .title-inner { position: relative; z-index: 1; }
+  .title-app-name {
+    font-size: 11px; font-weight: 600; letter-spacing: 3px;
+    color: var(--motto-accent); text-transform: uppercase; margin-bottom: 10px;
+    transition: color 0.25s;
+  }
+  .title-line1 {
+    font-size: 20px; font-weight: 800;
+    color: var(--motto-line1);
+    letter-spacing: -0.3px; line-height: 1.3;
+    transition: color 0.25s;
+  }
+  .title-line2 {
+    font-size: 20px; font-weight: 400;
+    color: var(--motto-line2);
+    letter-spacing: -0.3px; line-height: 1.3;
+    transition: color 0.25s;
+  }
+  .title-divider {
+    width: 32px; height: 2px;
+    background: var(--motto-accent);
+    border-radius: 2px; margin: 12px 0 0;
+    transition: background 0.25s;
+  }
+  .title-theme-btn {
+    position: absolute; top: 18px; right: 20px; z-index: 2;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px; padding: 5px 10px; cursor: pointer;
+    font-size: 15px; transition: background 0.2s;
+  }
+  .title-theme-btn:active { background: rgba(255,255,255,0.2); }
+  .title-theme-btn .icon-sun { display: inline; }
+  .title-theme-btn .icon-moon { display: none; }
+  body.dark .title-theme-btn .icon-sun { display: none; }
+  body.dark .title-theme-btn .icon-moon { display: inline; }
+
+  /* ══ 헤더 ══ */
+  .header {
+    padding: 14px 20px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: center; }
+
+  .date-nav { display: flex; align-items: center; gap: 6px; }
+  .date-nav-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 15px; padding: 3px 5px;
+    border-radius: 6px; line-height: 1; transition: color 0.15s, background 0.15s;
+  }
+  .date-nav-btn:active { background: var(--border); }
+  .date-label { font-size: 19px; font-weight: 700; color: var(--text-primary); transition: color 0.25s; }
+  .date-label .day-tag { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-left: 2px; }
+  .today-badge {
+    font-size: 10px; font-weight: 700; background: #4f6ef7; color: #fff;
+    border-radius: 6px; padding: 2px 6px; margin-left: 6px; vertical-align: middle;
+  }
+
+  .header-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; transition: color 0.25s; }
+
+  /* 요약 바 */
+  .summary-bar {
+    display: flex; height: 5px; border-radius: 4px; overflow: hidden; margin-top: 10px; gap: 2px;
+    background: var(--border);
+  }
+  .bar-seg { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+  /* ══ 진행 중 배너 ══ */
+  .inprogress-banner {
+    margin: 12px 20px 0;
+    background: var(--inprogress-bg);
+    border: 1.5px solid var(--inprogress-border);
+    border-radius: 14px; padding: 12px 14px;
+    display: none; align-items: center; gap: 10px;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .inprogress-banner.visible { display: flex; }
+  .inprogress-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  .inprogress-info { flex: 1; }
+  .inprogress-label { font-size: 13px; font-weight: 600; color: var(--text-primary); transition: color 0.25s; }
+  .inprogress-time { font-size: 11px; color: var(--text-muted); margin-top: 1px; transition: color 0.25s; }
+  .stop-btn {
+    background: #ff7043; color: #fff; border: none; border-radius: 10px;
+    padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+    font-family: inherit; flex-shrink: 0;
+  }
+
+  /* ══ 콘텐츠 ══ */
+  .content { flex: 1; overflow-y: auto; padding: 16px 20px 100px; }
+
+  .section-title {
+    font-size: 13px; font-weight: 600; color: var(--text-muted);
+    margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+    transition: color 0.25s; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  /* 엔트리 카드 */
+  .entry-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .entry-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 1px 4px var(--card-shadow); transition: background 0.25s, border-color 0.25s;
+  }
+  .entry-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .entry-info { flex: 1; }
+  .entry-category { font-size: 14px; font-weight: 600; color: var(--text-primary); transition: color 0.25s; }
+  .entry-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; transition: color 0.25s; }
+  .entry-duration { font-size: 13px; font-weight: 700; color: #4f6ef7; }
+
+  /* 빈 상태 */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 20px; text-align: center;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; transition: color 0.25s; }
+  .empty-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; transition: color 0.25s; }
+
+  /* FAB */
+  .fab {
+    position: fixed; bottom: 76px; right: calc(50% - 195px + 20px);
+    width: 54px; height: 54px; border-radius: 27px;
+    background: #4f6ef7; color: #fff; border: none;
+    font-size: 26px; cursor: pointer; box-shadow: 0 4px 16px rgba(79,110,247,0.4);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: scale(0.93); }
+
+  /* ══ 모달 ══ */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end;
+    left: 50%; transform: translateX(-50%); width: 390px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--modal-bg); border-radius: 24px 24px 0 0;
+    padding: 20px 20px 40px; width: 100%;
+    max-height: 88vh; overflow-y: auto; transition: background 0.25s;
+  }
+  .modal-handle { width: 40px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 18px; }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 18px; transition: color 0.25s; }
+
+  .modal-tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+  .modal-tab {
+    flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid var(--border2);
+    font-size: 13px; font-weight: 600; color: var(--text-muted);
+    background: var(--surface); cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .modal-tab.active { border-color: #4f6ef7; background: #f0f3ff; color: #4f6ef7; }
+  body.dark .modal-tab.active { background: #1e2340; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+  .cat-btn {
+    border: 2px solid var(--border2); border-radius: 12px; padding: 12px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer; background: var(--surface); transition: all 0.15s; font-family: inherit;
+  }
+  .cat-btn.selected { border-color: #4f6ef7; background: #f0f3ff; }
+  body.dark .cat-btn.selected { background: #1e2340; }
+  .cat-btn .icon { font-size: 22px; }
+  .cat-btn .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); transition: color 0.25s; }
+  .cat-btn.selected .label { color: #4f6ef7; }
+
+  .sleep-hint {
+    background: #f0f3ff; border-radius: 10px; padding: 10px 12px;
+    font-size: 12px; color: #4f6ef7; margin-bottom: 14px; line-height: 1.6; display: none;
+  }
+  body.dark .sleep-hint { background: #1e2340; }
+
+  .sub-section { margin-bottom: 16px; }
+  .sub-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; transition: color 0.25s; }
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chip {
+    padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border2);
+    font-size: 12px; color: var(--text-secondary); cursor: pointer; background: var(--chip-bg);
+    font-family: inherit; transition: all 0.15s;
+  }
+  .chip.selected { border-color: #4f6ef7; background: #f0f3ff; color: #4f6ef7; font-weight: 600; }
+  body.dark .chip.selected { background: #1e2340; }
+  .chip-input {
+    width: 100%; border: 1.5px solid var(--border2); border-radius: 10px;
+    padding: 10px 12px; font-size: 14px; outline: none; font-family: inherit;
+    color: var(--text-primary); background: var(--surface); transition: border-color 0.15s, background 0.25s, color 0.25s;
+  }
+  .chip-input:focus { border-color: #4f6ef7; }
+
+  .time-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .time-box { flex: 1; }
+  .time-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; transition: color 0.25s; }
+  .time-input {
+    width: 100%; border: 1.5px solid var(--border2); border-radius: 10px;
+    padding: 11px 12px; font-size: 16px; outline: none; font-family: inherit;
+    color: var(--text-primary); text-align: center; background: var(--surface);
+    transition: border-color 0.15s, background 0.25s, color 0.25s;
+  }
+  .time-input:focus { border-color: #4f6ef7; }
+
+  .memo-input {
+    width: 100%; border: 1.5px solid var(--border2); border-radius: 10px;
+    padding: 11px 12px; font-size: 14px; outline: none; font-family: inherit;
+    color: var(--text-primary); background: var(--surface); resize: none; margin-bottom: 16px;
+    transition: border-color 0.15s, background 0.25s, color 0.25s;
+  }
+  .memo-input:focus { border-color: #4f6ef7; }
+
+  .save-btn {
+    width: 100%; background: #4f6ef7; color: #fff; border: none;
+    border-radius: 14px; padding: 15px; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .save-btn:active { opacity: 0.85; }
+
+  .start-now-btn {
+    width: 100%; background: #ff7043; color: #fff; border: none;
+    border-radius: 14px; padding: 15px; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .start-now-btn:active { opacity: 0.85; }
+  .start-desc { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 10px; line-height: 1.5; transition: color 0.25s; }
+
+  /* ══ 월간 빈 상태 ══ */
+  .monthly-empty {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 60px 30px; text-align: center;
+  }
+  .monthly-empty-icon { font-size: 52px; margin-bottom: 20px; opacity: 0.4; }
+  .monthly-empty-title { font-size: 16px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; transition: color 0.25s; }
+  .monthly-empty-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; transition: color 0.25s; }
+  .monthly-empty-bar {
+    margin-top: 28px; width: 100%; background: var(--border);
+    border-radius: 8px; height: 8px; overflow: hidden;
+  }
+  .monthly-empty-bar-fill {
+    height: 100%; width: 15%; background: linear-gradient(90deg, #4f6ef7, #7b5ea7);
+    border-radius: 8px; animation: progress-hint 2s ease-in-out infinite alternate;
+  }
+  @keyframes progress-hint {
+    from { width: 10%; }
+    to { width: 25%; }
+  }
+  .monthly-empty-bar-label { font-size: 11px; color: var(--text-muted); margin-top: 8px; transition: color 0.25s; }
+
+  /* ══ 바텀 네비 ══ */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 390px; background: var(--nav-bg); border-top: 1px solid var(--nav-border);
+    display: flex; z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 0; gap: 3px; cursor: pointer; border: none;
+    background: none; font-size: 10px; color: var(--text-faint);
+    font-family: inherit; transition: color 0.2s;
+  }
+  .nav-btn.active { color: #4f6ef7; }
+  .nav-btn svg { width: 22px; height: 22px; }
+
+  /* 월간 헤더 */
+  .month-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 28px; }
+  .month-nav button { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-secondary); padding: 4px 8px; transition: color 0.25s; }
+  .month-nav .month-label { font-size: 18px; font-weight: 700; color: var(--text-primary); transition: color 0.25s; }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+
+  <!-- ══════════════ 오늘 화면 ══════════════ -->
+  <div class="screen active" id="screen-today">
+
+    <!-- 타이틀 배너 -->
+    <div class="title-banner">
+      <button class="title-theme-btn" onclick="toggleTheme()">
+        <span class="icon-sun">☀️</span>
+        <span class="icon-moon">🌙</span>
+      </button>
+      <div class="title-inner">
+        <div class="title-app-name">TimeBook · 시간부</div>
+        <div class="title-line1">하루하루는 성실하게,</div>
+        <div class="title-line2">인생 전체는 되는 대로</div>
+        <div class="title-divider"></div>
+      </div>
+    </div>
+
+    <!-- 헤더 -->
+    <div class="header">
+      <div class="header-top">
+        <div class="date-nav">
+          <button class="date-nav-btn" onclick="changeDay(-1)">◀</button>
+          <div class="date-label" id="date-label"></div>
+          <button class="date-nav-btn" onclick="changeDay(1)">▶</button>
+        </div>
+      </div>
+      <div class="header-sub" id="header-sub">기록 없음</div>
+      <div class="summary-bar" id="summary-bar" style="margin-top:10px;">
+        <!-- JS로 채워짐 -->
+      </div>
+    </div>
+
+    <!-- 진행 중 배너 -->
+    <div class="inprogress-banner" id="inprogress-banner">
+      <div class="inprogress-dot" id="inprogress-dot"></div>
+      <div class="inprogress-info">
+        <div class="inprogress-label" id="inprogress-label"></div>
+        <div class="inprogress-time" id="inprogress-time"></div>
+      </div>
+      <button class="stop-btn" onclick="openStopModal()">종료</button>
+    </div>
+
+    <div class="content">
+      <div class="section-title">
+        <span>기록</span>
+        <span style="color:#4f6ef7;font-size:12px;cursor:pointer;text-transform:none;letter-spacing:0;">전체보기</span>
+      </div>
+      <div class="entry-list" id="entry-list"></div>
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">아직 기록이 없어요</div>
+        <div class="empty-desc">+ 버튼을 눌러 오늘의 첫 기록을<br>시작해보세요</div>
+      </div>
+    </div>
+
+    <button class="fab" onclick="openModal()">+</button>
+  </div>
+
+  <!-- ══════════════ 월간 화면 ══════════════ -->
+  <div class="screen" id="screen-monthly">
+    <div class="title-banner">
+      <button class="title-theme-btn" onclick="toggleTheme()">
+        <span class="icon-sun">☀️</span>
+        <span class="icon-moon">🌙</span>
+      </button>
+      <div class="title-inner">
+        <div class="title-app-name">TimeBook · 시간부</div>
+        <div class="title-line1">하루하루는 성실하게,</div>
+        <div class="title-line2">인생 전체는 되는 대로</div>
+        <div class="title-divider"></div>
+      </div>
+    </div>
+    <div class="header">
+      <div class="header-top">
+        <div style="font-size:19px;font-weight:700;color:var(--text-primary);transition:color 0.25s;">월간 리포트</div>
+      </div>
+      <div class="header-sub">평일 누적 데이터 분석</div>
+    </div>
+
+    <div class="content">
+      <div class="month-nav">
+        <button id="month-prev">◀</button>
+        <span class="month-label" id="month-label"></span>
+        <button id="month-next">▶</button>
+      </div>
+      <div class="monthly-empty">
+        <div class="monthly-empty-icon">📊</div>
+        <div class="monthly-empty-title">아직 분석할 데이터가 없어요</div>
+        <div class="monthly-empty-desc">
+          평일 기록이 쌓이기 시작하면<br>
+          파이차트와 통계가 여기에 표시돼요.<br><br>
+          <strong style="color:var(--text-secondary);">오늘부터 기록을 시작해보세요 👋</strong>
+        </div>
+        <div class="monthly-empty-bar">
+          <div class="monthly-empty-bar-fill"></div>
+        </div>
+        <div class="monthly-empty-bar-label">데이터 누적 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 기록 추가 모달 ══════════════ -->
+  <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">시간 기록</div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tab-manual" onclick="switchTab('manual')">직접 입력</button>
+        <button class="modal-tab" id="tab-startnow" onclick="switchTab('startnow')">지금 시작</button>
+      </div>
+
+      <!-- 직접 입력 -->
+      <div class="tab-panel active" id="panel-manual">
+        <div class="sub-title">카테고리</div>
+        <div class="cat-grid">
+          <button class="cat-btn selected" onclick="selectCat(this,'수면','manual')"><span class="icon">💤</span><span class="label">수면</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'업무','manual')"><span class="icon">💼</span><span class="label">업무</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'이동','manual')"><span class="icon">🚌</span><span class="label">이동</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'식사','manual')"><span class="icon">🍚</span><span class="label">식사</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'운동','manual')"><span class="icon">🏃</span><span class="label">운동</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'여가','manual')"><span class="icon">🎮</span><span class="label">여가</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'기타','manual')" style="grid-column:span 3;"><span class="icon">📌</span><span class="label">기타</span></button>
+        </div>
+        <div class="sleep-hint" id="sleep-hint-manual">
+          💡 자정을 넘기는 수면은 시작 시간을 전날 기준으로 입력하세요.<br>기록은 <strong>일어난 날</strong>에 저장됩니다. (예: 23:30 → 07:30)
+        </div>
+        <div class="sub-section" id="manual-sub-여가" style="display:none;">
+          <div class="sub-title">여가 세분화</div>
+          <div class="chip-wrap">
+            <button class="chip" onclick="selectChip(this)">유튜브</button>
+            <button class="chip" onclick="selectChip(this)">게임</button>
+            <button class="chip" onclick="selectChip(this)">독서</button>
+            <button class="chip" onclick="selectChip(this)">산책</button>
+            <button class="chip" onclick="selectChip(this)">OTT</button>
+            <button class="chip" onclick="selectChip(this)">SNS</button>
+            <button class="chip" onclick="selectChip(this)">쇼핑</button>
+          </div>
+          <input class="chip-input" placeholder="직접 입력 (예: 카페에서 멍때리기)">
+        </div>
+        <div class="sub-section" id="manual-sub-기타" style="display:none;">
+          <div class="sub-title">기타 — 직접 입력</div>
+          <input class="chip-input" placeholder="예: 병원, 개인 용무, 공부 등">
+        </div>
+        <div class="sub-title">시간</div>
+        <div class="time-row">
+          <div class="time-box">
+            <div class="time-label">시작</div>
+            <input class="time-input" id="manual-start" type="time">
+          </div>
+          <div style="display:flex;align-items:flex-end;padding-bottom:11px;color:var(--text-faint);font-size:18px;">→</div>
+          <div class="time-box">
+            <div class="time-label">종료</div>
+            <input class="time-input" id="manual-end" type="time">
+          </div>
+        </div>
+        <textarea class="memo-input" rows="2" placeholder="메모 (선택사항)"></textarea>
+        <button class="save-btn" onclick="saveManual()">저장</button>
+      </div>
+
+      <!-- 지금 시작 -->
+      <div class="tab-panel" id="panel-startnow">
+        <div class="sub-title">카테고리</div>
+        <div class="cat-grid">
+          <button class="cat-btn selected" onclick="selectCat(this,'수면','startnow')"><span class="icon">💤</span><span class="label">수면</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'업무','startnow')"><span class="icon">💼</span><span class="label">업무</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'이동','startnow')"><span class="icon">🚌</span><span class="label">이동</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'식사','startnow')"><span class="icon">🍚</span><span class="label">식사</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'운동','startnow')"><span class="icon">🏃</span><span class="label">운동</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'여가','startnow')"><span class="icon">🎮</span><span class="label">여가</span></button>
+          <button class="cat-btn" onclick="selectCat(this,'기타','startnow')" style="grid-column:span 3;"><span class="icon">📌</span><span class="label">기타</span></button>
+        </div>
+        <div class="sub-section" id="startnow-sub-여가" style="display:none;">
+          <div class="sub-title">여가 세분화</div>
+          <div class="chip-wrap">
+            <button class="chip" onclick="selectChip(this)">유튜브</button>
+            <button class="chip" onclick="selectChip(this)">게임</button>
+            <button class="chip" onclick="selectChip(this)">독서</button>
+            <button class="chip" onclick="selectChip(this)">산책</button>
+            <button class="chip" onclick="selectChip(this)">OTT</button>
+            <button class="chip" onclick="selectChip(this)">SNS</button>
+            <button class="chip" onclick="selectChip(this)">쇼핑</button>
+          </div>
+          <input class="chip-input" placeholder="직접 입력">
+        </div>
+        <div class="sub-section" id="startnow-sub-기타" style="display:none;">
+          <div class="sub-title">기타 — 직접 입력</div>
+          <input class="chip-input" placeholder="예: 병원, 개인 용무, 공부 등">
+        </div>
+        <textarea class="memo-input" rows="2" placeholder="메모 (선택사항)"></textarea>
+        <button class="start-now-btn" onclick="startNow()">지금 시작</button>
+        <div class="start-desc">시작 시간이 자동으로 기록되고,<br>나중에 종료 버튼으로 마칠 수 있어요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 종료 모달 ══════════════ -->
+  <div class="modal-overlay" id="stop-modal" onclick="closeStopOutside(event)">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="stop-modal-title"></div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px;transition:color 0.25s;" id="stop-modal-desc"></div>
+      <div class="sub-title">종료 시간</div>
+      <div class="time-row" style="margin-bottom:16px;">
+        <div class="time-box">
+          <input class="time-input" id="stop-time" type="time">
+        </div>
+      </div>
+      <textarea class="memo-input" rows="2" placeholder="메모 (선택사항)"></textarea>
+      <button class="save-btn" onclick="stopEntry()">저장 완료</button>
+    </div>
+  </div>
+
+  <!-- 바텀 네비 -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-today" onclick="showScreen('today')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      오늘
+    </button>
+    <button class="nav-btn" id="nav-monthly" onclick="showScreen('monthly')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12 L12 5"/><path d="M12 12 L17 15"/></svg>
+      월간
+    </button>
+    <button class="nav-btn" id="nav-settings">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      설정
+    </button>
+  </nav>
+
+</div>
+
+<script>
+  const DAYS = ['일','월','화','수','목','금','토'];
+  const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const CAT_COLORS = { 수면:'#6c8cff', 업무:'#ff7043', 이동:'#66bb6a', 식사:'#ffa726', 운동:'#ab47bc', 여가:'#26c6da', 기타:'#bdbdbd' };
+  const CAT_ICONS  = { 수면:'💤', 업무:'💼', 이동:'🚌', 식사:'🍚', 운동:'🏃', 여가:'🎮', 기타:'📌' };
+
+  // ── 상태
+  let currentDate = new Date();
+  let selectedCat = { manual: '수면', startnow: '수면' };
+  let currentTab = 'manual';
+  let viewMonth = { year: currentDate.getFullYear(), month: currentDate.getMonth() };
+
+  // ── 날짜 유틸
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function isToday(d) { return dateKey(d) === dateKey(new Date()); }
+
+  function renderDate() {
+    const y = currentDate.getFullYear();
+    const m = String(currentDate.getMonth()+1).padStart(2,'0');
+    const day = String(currentDate.getDate()).padStart(2,'0');
+    const dow = DAYS[currentDate.getDay()];
+    const todayMark = isToday(currentDate) ? '<span class="today-badge">오늘</span>' : '';
+    document.getElementById('date-label').innerHTML =
+      `${y}.${m}.${day}<span class="day-tag">(${dow})</span>${todayMark}`;
+    renderEntries();
+  }
+
+  function changeDay(delta) {
+    currentDate.setDate(currentDate.getDate() + delta);
+    renderDate();
+  }
+
+  // ── 월간 헤더
+  function renderMonthLabel() {
+    document.getElementById('month-label').textContent =
+      `${viewMonth.year}년 ${MONTHS[viewMonth.month]}`;
+  }
+  document.getElementById('month-prev').onclick = () => {
+    viewMonth.month--;
+    if (viewMonth.month < 0) { viewMonth.month = 11; viewMonth.year--; }
+    renderMonthLabel();
+  };
+  document.getElementById('month-next').onclick = () => {
+    viewMonth.month++;
+    if (viewMonth.month > 11) { viewMonth.month = 0; viewMonth.year++; }
+    renderMonthLabel();
+  };
+
+  // ── localStorage 기록 데이터
+  function getEntries(dateStr) {
+    const raw = localStorage.getItem('tb_entries_' + dateStr);
+    return raw ? JSON.parse(raw) : [];
+  }
+  function saveEntries(dateStr, entries) {
+    localStorage.setItem('tb_entries_' + dateStr, JSON.stringify(entries));
+  }
+
+  // ── 기록 렌더링
+  function timeToMins(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+  function minsToDuration(mins) {
+    if (mins < 0) mins += 24 * 60; // 자정 넘김 처리
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
+  }
+
+  function renderEntries() {
+    const key = dateKey(currentDate);
+    const entries = getEntries(key);
+    const list = document.getElementById('entry-list');
+    const empty = document.getElementById('empty-state');
+    const sub = document.getElementById('header-sub');
+    const bar = document.getElementById('summary-bar');
+
+    list.innerHTML = '';
+
+    if (entries.length === 0) {
+      empty.style.display = 'flex';
+      sub.textContent = '기록 없음';
+      bar.innerHTML = '';
+      return;
+    }
+
+    empty.style.display = 'none';
+
+    let totalMins = 0;
+    const catMins = {};
+
+    entries.forEach(e => {
+      let mins = timeToMins(e.end) - timeToMins(e.start);
+      if (mins < 0) mins += 24 * 60;
+      totalMins += mins;
+      catMins[e.cat] = (catMins[e.cat] || 0) + mins;
+
+      const isSleep = e.cat === '수면' && timeToMins(e.start) >= timeToMins(e.end);
+      const subLabel = [
+        isSleep ? '전날 ' + e.start : e.start,
+        '→',
+        e.end,
+        e.subcat ? '· ' + e.subcat : ''
+      ].filter(Boolean).join(' ');
+
+      const card = document.createElement('div');
+      card.className = 'entry-card';
+      card.innerHTML = `
+        <div class="entry-dot" style="background:${CAT_COLORS[e.cat]||'#bbb'}"></div>
+        <div class="entry-info">
+          <div class="entry-category">${CAT_ICONS[e.cat]||''} ${e.cat}</div>
+          <div class="entry-sub">${subLabel}${e.memo ? ' · ' + e.memo : ''}</div>
+        </div>
+        <div><div class="entry-duration">${minsToDuration(mins)}</div></div>
+      `;
+      list.appendChild(card);
+    });
+
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    sub.textContent = `기록된 시간 ${h}h ${m}m`;
+
+    // 요약 바
+    bar.innerHTML = Object.entries(catMins).map(([cat, mins]) =>
+      `<div class="bar-seg" style="width:${(mins/totalMins*100).toFixed(1)}%;background:${CAT_COLORS[cat]||'#bbb'}"></div>`
+    ).join('');
+  }
+
+  // ── 직접 입력 저장
+  function saveManual() {
+    const start = document.getElementById('manual-start').value;
+    const end = document.getElementById('manual-end').value;
+    if (!start || !end) { alert('시작/종료 시간을 입력해주세요.'); return; }
+
+    const cat = selectedCat['manual'];
+    const subcat = getSelectedSubcat('manual', cat);
+    const memo = document.querySelector('#panel-manual .memo-input').value.trim();
+    const key = dateKey(currentDate);
+    const entries = getEntries(key);
+    entries.push({ cat, subcat, start, end, memo });
+    saveEntries(key, entries);
+    closeModal();
+    renderEntries();
+  }
+
+  function getSelectedSubcat(panel, cat) {
+    if (cat === '여가') {
+      const chips = document.querySelectorAll(`#${panel}-sub-여가 .chip.selected`);
+      const custom = document.querySelector(`#${panel}-sub-여가 .chip-input`).value.trim();
+      const chipVals = [...chips].map(c => c.textContent).join(', ');
+      return [chipVals, custom].filter(Boolean).join(', ');
+    }
+    if (cat === '기타') {
+      return document.querySelector(`#${panel}-sub-기타 .chip-input`).value.trim();
+    }
+    return '';
+  }
+
+  // ── 지금 시작
+  function startNow() {
+    const existing = localStorage.getItem('timebook_inprogress');
+    if (existing) { alert('이미 진행 중인 기록이 있어요. 먼저 종료해주세요.'); return; }
+    const cat = selectedCat['startnow'];
+    const subcat = getSelectedSubcat('startnow', cat);
+    const now = new Date();
+    const startTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const item = { cat, subcat, startTime, dateKey: dateKey(currentDate) };
+    localStorage.setItem('timebook_inprogress', JSON.stringify(item));
+    closeModal();
+    loadInProgress();
+  }
+
+  // ── 진행 중 로드
+  function loadInProgress() {
+    const raw = localStorage.getItem('timebook_inprogress');
+    const banner = document.getElementById('inprogress-banner');
+    if (!raw) { banner.classList.remove('visible'); return; }
+    const item = JSON.parse(raw);
+    banner.classList.add('visible');
+    document.getElementById('inprogress-label').textContent =
+      `${CAT_ICONS[item.cat]||''} ${item.cat}${item.subcat ? ' · '+item.subcat : ''} 진행 중`;
+    document.getElementById('inprogress-time').textContent = `${item.startTime} 시작`;
+    document.getElementById('inprogress-dot').style.background = CAT_COLORS[item.cat] || '#ff7043';
+  }
+
+  function openStopModal() {
+    const raw = localStorage.getItem('timebook_inprogress');
+    if (!raw) return;
+    const item = JSON.parse(raw);
+    document.getElementById('stop-modal-title').textContent =
+      `${CAT_ICONS[item.cat]||''} ${item.cat} 종료`;
+    document.getElementById('stop-modal-desc').textContent = `시작: ${item.startTime}`;
+    const now = new Date();
+    document.getElementById('stop-time').value =
+      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('stop-modal').classList.add('open');
+  }
+
+  function stopEntry() {
+    const raw = localStorage.getItem('timebook_inprogress');
+    if (!raw) return;
+    const item = JSON.parse(raw);
+    const end = document.getElementById('stop-time').value;
+    if (!end) { alert('종료 시간을 입력해주세요.'); return; }
+    const memo = document.querySelector('#stop-modal .memo-input').value.trim();
+    const key = item.dateKey;
+    const entries = getEntries(key);
+    entries.push({ cat: item.cat, subcat: item.subcat, start: item.startTime, end, memo });
+    saveEntries(key, entries);
+    localStorage.removeItem('timebook_inprogress');
+    document.getElementById('inprogress-banner').classList.remove('visible');
+    document.getElementById('stop-modal').classList.remove('open');
+    renderEntries();
+  }
+
+  // ── 모달
+  function openModal() {
+    // 시간 기본값: 현재 시간
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('manual-start').value = hhmm;
+    document.getElementById('manual-end').value = hhmm;
+    document.getElementById('modal').classList.add('open');
+  }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+  function closeStopOutside(e) { if (e.target === document.getElementById('stop-modal')) document.getElementById('stop-modal').classList.remove('open'); }
+
+  // ── 탭
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.getElementById('panel-'+tab).classList.add('active');
+  }
+
+  // ── 카테고리
+  function selectCat(btn, cat, panel) {
+    btn.closest('.cat-grid').querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedCat[panel] = cat;
+    ['여가','기타'].forEach(c => {
+      const el = document.getElementById(`${panel}-sub-${c}`);
+      if (el) el.style.display = cat === c ? 'block' : 'none';
+    });
+    if (panel === 'manual') {
+      const hint = document.getElementById('sleep-hint-manual');
+      if (hint) hint.style.display = cat === '수면' ? 'block' : 'none';
+    }
+  }
+  function selectChip(chip) { chip.classList.toggle('selected'); }
+
+  // ── 화면 전환
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-'+name).classList.add('active');
+    document.getElementById('nav-'+name).classList.add('active');
+  }
+
+  function toggleTheme() { document.body.classList.toggle('dark'); }
+
+  // ── 초기화
+  renderDate();
+  renderMonthLabel();
+  loadInProgress();
+</script>
+</body>
+</html>
